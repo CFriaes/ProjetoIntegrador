@@ -1,0 +1,261 @@
+@import url('https://fonts.googleapis.com/css2?family=Kdam+Thmor+Pro&family=Titillium+Web:ital,wght@0,200;0,300;0,400;0,600;0,700;0,900;1,200;1,300;1,400;1,600;1,700&display=swap');
+
+* {
+    padding: 0;
+    margin: 0;
+}
+body {
+    position: relative;
+    background-image: url(../assets/Imagem_Principal.png);
+    background-repeat: no-repeat;
+    background-size: cover;
+
+}
+
+.header {
+    width: 100%;
+    height: 300px;
+    display: flex;
+    justify-content: center;
+}
+
+.logo {
+    position: relative;
+    width: 150px;
+    height: 200px;
+    background-image: url("https://ctead.ifpa.edu.br/proficiencia/theme/eguru/images/logoctead.png");
+    background-size: cover;
+    background-repeat: no-repeat;
+    clip-path: inset(0 0 40px 0);
+}
+
+.login-container {
+    position: relative;
+    padding: 0;
+    margin: 0;
+    bottom: 70px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.title {
+    display: inline-flex;
+    place-content: center;
+    font-family: "Titillium Web", sans-serif;
+    color: white;
+    font-size: 30px;
+}
+
+.login {
+    width: 500px;
+    height: 400px;
+    background-color: white;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-radius: 20px;
+    position: relative;
+}
+
+.data-container {
+    padding: 0;
+    margin: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+}
+
+form {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 10px;
+}
+
+label {
+    font-family: "Titillium Web", sans-serif;
+    font-size: 30px;
+}
+
+.form-1, .form-2 {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    justify-content: baseline;
+}
+
+#professor,#senha-prof {
+    width: 250px;
+    height: 30px;
+    font-family: "Titillium Web", sans-serif;
+    font-size: 15px;
+    border-radius: 10px;
+    padding: 0 15px 0 15px;
+}
+
+.button {
+    height: 25px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+#botao {
+    position: relative;
+    top: 20px;
+    width: 100px;
+    height: 38px;
+    border-radius: 10px;
+    font-family: "Titillium Web", sans-serif;
+    color: black;
+    font-size: 15px;
+    transition: 0.5s;
+}
+
+#botao:hover {
+    color: white;
+    cursor: pointer;
+    background-color: rgb(147, 218, 40);
+    transform: scale(1.05)
+}
+
+nav {
+    text-align: center;
+    margin-top: 50px;
+    font-family: "Titillium Web", sans-serif;
+}
+
+nav a {
+    color: black;
+    text-decoration: none;
+    font-size: 25px;
+    position: relative;
+}
+
+nav a::after {
+    content: " ";
+    width: 0%;
+    height: 2px;
+    background-color: black;
+    position: absolute;
+    bottom: 5px;
+    left: 0;
+    transition: 0.25s;
+}
+
+nav a:hover::after{
+    width: 100%;
+}
+
+@media(max-width: 768px) {
+    .logo {
+        top: 20px;
+        width: 75px;
+        height: 100px;
+        position: relative;
+        background-image: url("https://ctead.ifpa.edu.br/proficiencia/theme/eguru/images/logoctead.png");
+        background-size: cover;
+        background-repeat: no-repeat;
+        clip-path: inset(0 0 20px 0);
+    }
+
+    body {
+        position: relative;
+        background-position: 65%;
+        background-image: url(./assets/Imagem_Principal.png);
+        background-repeat: no-repeat;
+        background-size: cover;
+
+    }
+
+    .login-container {
+        position: relative;
+        padding: 0;
+        margin: 0;
+        bottom: 125px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .title {
+        display: inline-flex;
+        place-content: center;
+        font-family: "Titillium Web", sans-serif;
+        color: white;
+        font-size: 20px;
+    }
+
+    .login {
+        width: 300px;
+        height: 300px;
+        background-color: white;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        border-radius: 20px;
+        position: relative;
+    }
+
+    .data-container {
+        padding: 0;
+        margin: 0;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        flex-direction: column;
+    }
+
+    .form-1,
+    .form-2 {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-direction: column;
+        justify-content: baseline;
+    }
+
+    #aluno, #professor,
+    #senha {
+        width: 200px;
+        height: 30px;
+        font-family: "Titillium Web", sans-serif;
+        font-size: 15px;
+        border-radius: 10px;
+        padding: 0 15px 0 15px;
+    }
+
+    label {
+        font-family: "Titillium Web", sans-serif;
+        font-size: 20px;
+    }
+
+    #botao{
+        position: relative;
+        width: 100px;
+        height: 30px;
+        border-radius: 10px;
+        top: 20px;
+        font-family: "Titillium Web", sans-serif;
+        color: black;
+        font-size: 15px;
+        transition: 0.5s;
+    }
+
+    nav a {
+        color: black;
+        text-decoration: none;
+        font-size: 15px;
+        position: relative;
+    }
+
+    nav a:hover::after {
+        width: 0%;
+    }
+}
