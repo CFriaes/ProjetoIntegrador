@@ -42,6 +42,8 @@ html, body {
     top: 100px;
 }
 .wsquare {
+    display: flex;
+    align-items: center;
     margin-top: 30px;
     width: 75%;
     height: 85%;
@@ -49,8 +51,29 @@ html, body {
     border-radius: 45px;
 }
 
-nav.menu-lateral{
+ul{
+    margin-top:10px ;   
+}
+
+.text-space{
+    background-color: rgb(46, 46, 46);
+    width: 1200px;
+    height: 800px;
+    margin-left: 250px;
     position:relative;
+    border-radius: 30px;
+}
+
+div.text-space{
+    transition: 0.5s;
+}
+
+div.text-space.expandir{
+    width: 1000px;
+}
+
+nav.menu-lateral{
+    position: sticky;
     width: 90px;
     height: 100%;
     background-color: rgb(46, 46, 46);

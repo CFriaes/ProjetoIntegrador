@@ -12,8 +12,9 @@ menuItem.forEach((item)=>
 
 var btnExp = document.querySelector("#btn-exp")
 var menuSide = document.querySelector('.menu-lateral')
+var textSpace = document.querySelector('.text-space')
 
 btnExp.addEventListener('click', function(){
     menuSide.classList.toggle('expandir')
-    
+    textSpace.classList.toggle('expandir')
 })
