@@ -1,46 +1,53 @@
-const formulario = document.getElementById('form-al'); // Captura o formulário
-
-formulario.addEventListener('submit', (event) => {
+document.getElementById(`form`).addEventListener(`submit`, function(event){
     event.preventDefault();
 
-    // Captura os valores dos campos
-    const Iuser = document.getElementById("aluno").value;
-    const Isenha = document.getElementById("senha").value;
+    //pegar os valores dos campos do formulario
+    const Iuser = getElementById(`user`).value;
+    const Isenha = getElementById(`senha`).value;
+})
 
-    // Verifica se os campos estão vazios
-    if (Iuser == "" || Isenha == "") {
-        alert('Por favor, preencha todos os campos!');
-        return; // Interrompe a execução se os campos estiverem vazios
-    }
 
-    // Faz a requisição ao servidor
-    fetch(`http://localhost:8080/aluno`, {
-        method: 'POST', // Método HTTP
-        headers: {
-            'Content-Type': 'application/json' // Cabeçalho indicando JSON
-        },
-        body: JSON.stringify({ Iuser, Isenha }) // Converte os dados em JSON
-    })
+async function authenticateUser(username, password) {
+    const credentials = btoa(`${username}:${password}`);
 
-    .then((response) => {
-        if (response.ok) {
-            return response.json(); // Converte a resposta em JSON
-            window.location.href = "./aluno/aluno.html";
-            
-        } else {
-            throw new Error('Número de cadastro ou senha inválidos'); // Lança erro
+    try {
+        // Fazer a requisição para o endpoint /current-user
+        const response = await fetch('http://localhost:8080/current-user', {
+            method: 'GET',
+            headers: {
+                'Authorization': `Basic ${credentials}`, // Envia o Basic Auth no cabeçalho
+                'Content-Type': 'application/json'
+            }
+        });
+
+        // Verifica se a requisição foi bem-sucedida
+        if (!response.ok) {
+            throw new Error('Falha na autenticação. Verifique suas credenciais.');
         }
-    })
 
-    .then((data) => {
-        // Manipula a resposta bem-sucedida
-        alert('Login realizado com sucesso!');
-        console.log(data);
+        // Extrair a role do JSON retornado
+        const data = await response.json();
+        const userRole = data.role;
 
-    })
-    .catch((error) => {
-        // Trata erros, como falhas na conexão ou resposta inválida
-        alert(error.message);
-        console.error('Erro:', error);
-    });
-});
+        // Redirecionar o usuário com base na role
+        switch (userRole) {
+            case 'ADMIN':
+                window.location.href = '/admin.html';
+                break;
+            case 'RECEPCIONISTA':
+                window.location.href = '/recepcionista.html';
+                break;
+            case 'ALUNO':
+                window.location.href = '/aluno.html';
+                break;
+            case 'INSTRUTOR':
+                window.location.href = '/instrutor.html';
+                break;
+            default:
+                alert('Contate o suporte técnico.');
+        }
+    } catch (error) {
+        console.error('Erro durante a autenticação:', error);
+        alert('Erro ao autenticar. Por favor, tente novamente.');
+    }
+}

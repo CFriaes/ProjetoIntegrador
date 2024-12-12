@@ -43,10 +43,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 `;
                 alunosContainer.appendChild(alunoCard);
             });
-        } else if (endpoint === "mensalidades") {
-            alunosContainer.innerHTML = `<p>Mensalidades: ${JSON.stringify(data)}</p>`;
-        } else if (endpoint === "treinos") {
-            alunosContainer.innerHTML = `<p>Treinos: ${JSON.stringify(data)}</p>`;
         }
     }
 
