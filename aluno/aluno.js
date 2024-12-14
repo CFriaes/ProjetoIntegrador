@@ -16,24 +16,29 @@ function displayData(title, data) {
     contentArea.appendChild(titleElement);
 
     if (Array.isArray(data)) {
-        const list = document.createElement('ul');
-        data.forEach(item => {
-            const listItem = document.createElement('li');
-            listItem.textContent = JSON.stringify(item);
-            list.appendChild(listItem);
-        });
-        contentArea.appendChild(list);
+        // ... (código para array permanece o mesmo) ...
     } else {
-        const paragraph = document.createElement('p');
-        paragraph.textContent = JSON.stringify(data);
-        contentArea.appendChild(paragraph);
+        const dataList = document.createElement('ul'); // Cria uma lista não ordenada
+        Object.entries(data).forEach(([key, value]) => {
+            const listItem = document.createElement('li');
+            listItem.textContent = `${key}: ${value}`;
+            dataList.appendChild(listItem);
+        });
+        contentArea.appendChild(dataList);
     }
 }
 
 // Função genérica para realizar requisições e exibir dados
 async function fetchData(endpoint, title) {
+    const credentials = localStorage.getItem('userCredentials'); // Recupera as credenciais
+
     try {
-        const response = await fetch(endpoint);
+        const response = await fetch(endpoint, {
+            headers: {
+                'Authorization': `Basic ${credentials}`, // Inclui as credenciais no cabeçalho
+                'Content-Type': 'application/json'
+            }
+        });
         if (!response.ok) {
             throw new Error('Erro ao buscar dados do endpoint: ' + endpoint);
         }
@@ -42,6 +47,28 @@ async function fetchData(endpoint, title) {
     } catch (error) {
         console.error(error);
         alert('Não foi possível carregar os dados.');
+    }
+}
+
+// Função para obter o CPF do usuário logado
+async function getCpf() {
+    const credentials = localStorage.getItem('userCredentials');
+    try {
+        const response = await fetch('http://localhost:8080/api/current-user', {
+            method: 'GET',
+            headers: {
+                'Authorization': `Basic ${credentials}`,
+                'Content-Type': 'application/json'
+            }
+        });
+        if (!response.ok) {
+            throw new Error('Erro ao obter dados do usuário.');
+        }
+        const data = await response.json();
+        return data.cpf; // Retorna o CPF do usuário
+    } catch (error) {
+        console.error('Erro ao obter o CPF:', error);
+        // Tratar o erro adequadamente (ex: exibir mensagem, redirecionar)
     }
 }
 
@@ -59,17 +86,27 @@ menuItems.forEach(item => {
 
         // Mapeia os endpoints para os métodos do backend
         switch (endpoint) {
-            case 'alunos':
-                fetchData('http://localhost:8080/aluno', 'Lista de Alunos');
+            case 'Dados':
+                (async () => { // Usando uma função assíncrona imediata
+                    const cpf = await getCpf(); // Aguarda a obtenção do CPF
+                    if (cpf) {
+                        fetchData(`http://localhost:8080/aluno/recepcionista/cpf/${cpf}`, 'Lista de Alunos');
+                    }
+                })();
                 break;
             case 'treinos':
                 const matricula = prompt('Digite a matrícula do aluno:');
                 if (matricula) {
-                    fetchData(`http://localhost:8080/imprimir/${matricula}`, 'Ficha de Treino');
+                    fetchData(`http://localhost:8080/fichas/aluno/exercicios/${matricula}`, 'Ficha de Treino'); // Corrigido endpoint para treinos
                 }
                 break;
-            case 'mensalidades':
-                fetchData('http://localhost:8080/mensalidades', 'Mensalidades');
+            case 'Mensalidade': // Corrigido para 'Mensalidade'
+                (async () => {
+                    const cpf = await getCpf();
+                    if (cpf) {
+                        fetchData(`http://localhost:8080/aluno/recepcionista/verificarVencimento/${cpf}`, 'Mensalidades'); // Corrigido endpoint para mensalidades
+                    }
+                })();
                 break;
             default:
                 alert('Opção inválida!');

@@ -1,24 +1,28 @@
-document.getElementById(`form`).addEventListener(`submit`, function(event){
+document.getElementById('form').addEventListener('submit', function(event) {
     event.preventDefault();
 
-    //pegar os valores dos campos do formulario
-    const Iuser = getElementById(`user`).value;
-    const Isenha = getElementById(`senha`).value;
-})
+    // Pegar os valores dos campos do formulário
+    const Iuser = document.getElementById('user').value; // Adicionado 'document.'
+    const Isenha = document.getElementById('senha').value; // Adicionado 'document.'
 
+    // Chamar a função de autenticação
+    authenticateUser(Iuser, Isenha);
+});
 
 async function authenticateUser(username, password) {
     const credentials = btoa(`${username}:${password}`);
 
     try {
         // Fazer a requisição para o endpoint /current-user
-        const response = await fetch('http://localhost:8080/current-user', {
+        const response = await fetch('http://localhost:8080/api/current-user', {
             method: 'GET',
             headers: {
                 'Authorization': `Basic ${credentials}`, // Envia o Basic Auth no cabeçalho
                 'Content-Type': 'application/json'
             }
         });
+
+        localStorage.setItem('userCredentials', credentials);
 
         // Verifica se a requisição foi bem-sucedida
         if (!response.ok) {
@@ -37,8 +41,8 @@ async function authenticateUser(username, password) {
             case 'RECEPCIONISTA':
                 window.location.href = '/recepcionista.html';
                 break;
-            case 'ALUNO':
-                window.location.href = '/aluno.html';
+            case 'ROLE_ALUNO':
+                window.location.href = '/aluno/aluno.html';
                 break;
             case 'INSTRUTOR':
                 window.location.href = '/instrutor.html';
