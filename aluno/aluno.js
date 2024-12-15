@@ -1,6 +1,6 @@
 // Elementos HTML
-const menuItems = document.querySelectorAll('.item-menu'); // Itens do menu lateral
-const contentArea = document.querySelector('.text-space'); // Área de texto principal
+const menuItems = document.querySelectorAll('.item-menu');
+const contentArea = document.querySelector('.text-space');
 
 // Função para limpar a área de conteúdo
 function clearContentArea() {
@@ -16,37 +16,65 @@ function displayData(title, data) {
     contentArea.appendChild(titleElement);
 
     if (Array.isArray(data)) {
-        // ... (código para array permanece o mesmo) ...
-    } else {
-        const dataList = document.createElement('ul'); // Cria uma lista não ordenada
+        // ... (código para array) ...
+    } else if (typeof data === 'object') { // Verifica se é um objeto
+        const dataList = document.createElement('ul');
         Object.entries(data).forEach(([key, value]) => {
             const listItem = document.createElement('li');
             listItem.textContent = `${key}: ${value}`;
             dataList.appendChild(listItem);
         });
         contentArea.appendChild(dataList);
+    } else { // Caso seja uma string (mensagem de erro)
+        const messageElement = document.createElement('p'); 
+        messageElement.textContent = data; 
+        contentArea.appendChild(messageElement); 
     }
 }
 
+// Declara a variável credentials globalmente
+const credentials = localStorage.getItem('userCredentials'); 
+
 // Função genérica para realizar requisições e exibir dados
 async function fetchData(endpoint, title) {
-    const credentials = localStorage.getItem('userCredentials'); // Recupera as credenciais
+    const credentials = localStorage.getItem('userCredentials');
 
     try {
         const response = await fetch(endpoint, {
             headers: {
-                'Authorization': `Basic ${credentials}`, // Inclui as credenciais no cabeçalho
+                'Authorization': `Basic ${credentials}`,
                 'Content-Type': 'application/json'
             }
         });
+
         if (!response.ok) {
-            throw new Error('Erro ao buscar dados do endpoint: ' + endpoint);
+            if (response.status === 404) {
+                displayData(title, "Ficha de treino não encontrada");
+            } else if (response.status === 400) {
+                const message = await response.text(); // Lê a resposta como texto
+                displayData(title, message); // Exibe a mensagem
+            } else {
+                throw new Error('Erro ao buscar dados do endpoint: ' + endpoint);
+            }
+        } else {
+            // Lê a resposta como texto apenas se o status for 200 (OK) e o endpoint for verificarVencimento
+            if (response.status === 200 && endpoint.includes('verificarVencimento')) { 
+                const data = await response.text();
+                displayData(title, data);
+            } else {
+                const data = await response.json(); // Tenta ler como JSON para outros status
+                displayData(title, data);
+            }
         }
+
         const data = await response.json();
         displayData(title, data);
+
     } catch (error) {
         console.error(error);
-        alert('Não foi possível carregar os dados.');
+        if (error.name === 'SyntaxError' && error.message.includes('JSON')) {
+            displayData(title, "Erro ao analisar a resposta JSON."); // Ou uma mensagem de erro genérica
+        } 
     }
 }
 
@@ -65,49 +93,97 @@ async function getCpf() {
             throw new Error('Erro ao obter dados do usuário.');
         }
         const data = await response.json();
-        return data.cpf; // Retorna o CPF do usuário
+        return data.cpf;
     } catch (error) {
         console.error('Erro ao obter o CPF:', error);
-        // Tratar o erro adequadamente (ex: exibir mensagem, redirecionar)
     }
 }
 
 // Evento de clique para ativar um item do menu e carregar os dados correspondentes
 menuItems.forEach(item => {
     item.addEventListener('click', () => {
-        // Remove a classe "ativo" de todos os itens
         menuItems.forEach(menuItem => menuItem.classList.remove('ativo'));
-
-        // Adiciona a classe "ativo" ao item clicado
         item.classList.add('ativo');
 
-        // Determina o endpoint com base no atributo "data-endpoint"
         const endpoint = item.getAttribute('data-endpoint');
 
-        // Mapeia os endpoints para os métodos do backend
         switch (endpoint) {
             case 'Dados':
-                (async () => { // Usando uma função assíncrona imediata
-                    const cpf = await getCpf(); // Aguarda a obtenção do CPF
+                (async () => {
+                    const cpf = await getCpf();
                     if (cpf) {
                         fetchData(`http://localhost:8080/aluno/recepcionista/cpf/${cpf}`, 'Lista de Alunos');
                     }
                 })();
                 break;
-            case 'treinos':
-                const matricula = prompt('Digite a matrícula do aluno:');
-                if (matricula) {
-                    fetchData(`http://localhost:8080/fichas/aluno/exercicios/${matricula}`, 'Ficha de Treino'); // Corrigido endpoint para treinos
-                }
-                break;
-            case 'Mensalidade': // Corrigido para 'Mensalidade'
+
+                case 'treinos':
+                    (async () => {
+                        const cpf = await getCpf(); // Obtém o CPF do usuário logado
+                        if (cpf) {
+                            try {
+                                // Faz uma requisição para obter os dados do aluno
+                                const response = await fetch(`http://localhost:8080/aluno/recepcionista/cpf/${cpf}`, {
+                                    headers: {
+                                        'Authorization': `Basic ${credentials}`,
+                                        'Content-Type': 'application/json'
+                                    }
+                                });
+                                if (!response.ok) {
+                                    throw new Error('Erro ao buscar dados do aluno.');
+                                }
+                                const aluno = await response.json();
+                                const matricula = parseInt(aluno.matricula); // Obtém a matrícula do aluno
+            
+                                fetchData(`http://localhost:8080/fichas/aluno/exercicios/${matricula}`, 'Ficha de Treino');
+            
+                            } catch (error) {
+                                console.error('Erro ao obter dados do aluno:', error);
+                                alert('Não foi possível carregar os dados.');
+                            }
+                        }
+                    })();
+                    break;
+
+              case 'Mensalidade':
                 (async () => {
                     const cpf = await getCpf();
                     if (cpf) {
-                        fetchData(`http://localhost:8080/aluno/recepcionista/verificarVencimento/${cpf}`, 'Mensalidades'); // Corrigido endpoint para mensalidades
+                        // Chama fetchData com o endpoint correto para mensalidade
+                        fetchData(`http://localhost:8080/aluno/recepcionista/verificarVencimento/${cpf}`, 'Mensalidades'); 
                     }
                 })();
                 break;
+
+                case 'imprimirTreino':
+                    (async () => {
+                        const cpf = await getCpf(); // Obtém o CPF do usuário logado
+                        if (cpf) {
+                            try {
+                                // Faz uma requisição para obter os dados do aluno
+                                const response = await fetch(`http://localhost:8080/aluno/recepcionista/cpf/${cpf}`, {
+                                    headers: {
+                                        'Authorization': `Basic ${credentials}`,
+                                        'Content-Type': 'application/json'
+                                    }
+                                });
+                                if (!response.ok) {
+                                    throw new Error('Erro ao buscar dados do aluno.');
+                                }
+                                const aluno = await response.json();
+                                const matricula = aluno.matricula; // Obtém a matrícula do aluno
+    
+                                // Chama fetchData com a matrícula do aluno
+                                fetchData(`http://localhost:8080/fichas/imprimir/${matricula}`, 'Imprimir Treino');
+    
+                            } catch (error) {
+                                console.error('Erro ao obter dados do aluno:', error);
+                                alert('Não foi possível carregar os dados.');
+                            }
+                        }
+                    })();
+                    break;
+
             default:
                 alert('Opção inválida!');
         }
