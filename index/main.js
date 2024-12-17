@@ -35,17 +35,17 @@ async function authenticateUser(username, password) {
 
         // Redirecionar o usuário com base na role
         switch (userRole) {
-            case 'ADMIN':
+            case 'ROLE_ADMIN':
                 window.location.href = '/admin.html';
                 break;
-            case 'RECEPCIONISTA':
+            case 'ROLE_RECEPCIONISTA':
                 window.location.href = '/recepcionista.html';
                 break;
             case 'ROLE_ALUNO':
                 window.location.href = '/aluno/aluno.html';
                 break;
-            case 'INSTRUTOR':
-                window.location.href = '/instrutor.html';
+            case 'ROLE_INSTRUTOR':
+                window.location.href = '/professor/professor.html';
                 break;
             default:
                 alert('Contate o suporte técnico.');

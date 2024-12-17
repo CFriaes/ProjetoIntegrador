@@ -26,14 +26,14 @@ function displayData(title, data) {
         });
         contentArea.appendChild(dataList);
     } else { // Caso seja uma string (mensagem de erro)
-        const messageElement = document.createElement('p'); 
-        messageElement.textContent = data; 
-        contentArea.appendChild(messageElement); 
+        const messageElement = document.createElement('p');
+        messageElement.textContent = data;
+        contentArea.appendChild(messageElement);
     }
 }
 
 // Declara a variável credentials globalmente
-const credentials = localStorage.getItem('userCredentials'); 
+const credentials = localStorage.getItem('userCredentials');
 
 // Função genérica para realizar requisições e exibir dados
 async function fetchData(endpoint, title) {
@@ -48,17 +48,15 @@ async function fetchData(endpoint, title) {
         });
 
         if (!response.ok) {
-            if (response.status === 404) {
-                displayData(title, "Ficha de treino não encontrada");
-            } else if (response.status === 400) {
-                const message = await response.text(); // Lê a resposta como texto
-                displayData(title, message); // Exibe a mensagem
+            if (response.status === 404 || response.status === 400) { // 404 Not Found ou 400 Bad Request
+                const message = await response.text(); // Lê a mensagem de erro como texto
+                displayData(title, message);
             } else {
                 throw new Error('Erro ao buscar dados do endpoint: ' + endpoint);
             }
         } else {
             // Lê a resposta como texto apenas se o status for 200 (OK) e o endpoint for verificarVencimento
-            if (response.status === 200 && endpoint.includes('verificarVencimento')) { 
+            if (response.status === 200 && endpoint.includes('verificarVencimento')) {
                 const data = await response.text();
                 displayData(title, data);
             } else {
@@ -67,14 +65,11 @@ async function fetchData(endpoint, title) {
             }
         }
 
-        const data = await response.json();
-        displayData(title, data);
-
     } catch (error) {
         console.error(error);
         if (error.name === 'SyntaxError' && error.message.includes('JSON')) {
             displayData(title, "Erro ao analisar a resposta JSON."); // Ou uma mensagem de erro genérica
-        } 
+        }
     }
 }
 
@@ -117,50 +112,47 @@ menuItems.forEach(item => {
                 })();
                 break;
 
-                case 'treinos':
-                    (async () => {
-                        const cpf = await getCpf(); // Obtém o CPF do usuário logado
-                        if (cpf) {
-                            try {
-                                // Faz uma requisição para obter os dados do aluno
-                                const response = await fetch(`http://localhost:8080/aluno/recepcionista/cpf/${cpf}`, {
-                                    headers: {
-                                        'Authorization': `Basic ${credentials}`,
-                                        'Content-Type': 'application/json'
-                                    }
-                                });
-                                if (!response.ok) {
-                                    throw new Error('Erro ao buscar dados do aluno.');
+            case 'treinos':
+                (async () => {
+                    const cpf = await getCpf(); // Obtém o CPF do usuário logado
+                    if (cpf) {
+                        try {
+                            // Faz uma requisição para obter os dados do aluno
+                            const response = await fetch(`http://localhost:8080/aluno/recepcionista/cpf/${cpf}`, {
+                                headers: {
+                                    'Authorization': `Basic ${credentials}`,
+                                    'Content-Type': 'application/json'
                                 }
-                                const aluno = await response.json();
-                                const matricula = parseInt(aluno.matricula); // Obtém a matrícula do aluno
-            
-                                fetchData(`http://localhost:8080/fichas/aluno/exercicios/${matricula}`, 'Ficha de Treino');
-            
-                            } catch (error) {
-                                console.error('Erro ao obter dados do aluno:', error);
-                                alert('Não foi possível carregar os dados.');
+                            });
+                            if (!response.ok) {
+                                throw new Error('Erro ao buscar dados do aluno.');
                             }
-                        }
-                    })();
-                    break;
+                            const aluno = await response.json();
+                            const matricula = parseInt(aluno.matricula); // Obtém a matrícula do aluno
 
-              case 'Mensalidade':
+                            fetchData(`http://localhost:8080/fichas/aluno/exercicios/${matricula}`, 'Ficha de Treino');
+                        } catch (error) {
+                            console.error('Erro ao obter dados do aluno:', error);
+                            alert('Não foi possível carregar os dados.');
+                        }
+                    }
+                })();
+                break;
+
+            case 'Mensalidade':
                 (async () => {
                     const cpf = await getCpf();
                     if (cpf) {
-                        // Chama fetchData com o endpoint correto para mensalidade
-                        fetchData(`http://localhost:8080/aluno/recepcionista/verificarVencimento/${cpf}`, 'Mensalidades'); 
+                        fetchData(`http://localhost:8080/aluno/recepcionista/verificarVencimento/${cpf}`, 'Mensalidades');
                     }
                 })();
                 break;
 
                 case 'imprimirTreino':
                     (async () => {
-                        const cpf = await getCpf(); // Obtém o CPF do usuário logado
+                        const cpf = await getCpf();
                         if (cpf) {
                             try {
-                                // Faz uma requisição para obter os dados do aluno
                                 const response = await fetch(`http://localhost:8080/aluno/recepcionista/cpf/${cpf}`, {
                                     headers: {
                                         'Authorization': `Basic ${credentials}`,
@@ -171,11 +163,26 @@ menuItems.forEach(item => {
                                     throw new Error('Erro ao buscar dados do aluno.');
                                 }
                                 const aluno = await response.json();
-                                const matricula = aluno.matricula; // Obtém a matrícula do aluno
-    
-                                // Chama fetchData com a matrícula do aluno
-                                fetchData(`http://localhost:8080/fichas/imprimir/${matricula}`, 'Imprimir Treino');
-    
+                                const matricula = aluno.matricula;
+                
+                                // Faz a requisição PUT para o endpoint /fichas/imprimir/{matricula}
+                                const responseImprimir = await fetch(`http://localhost:8080/fichas/imprimir/${matricula}`, {
+                                    method: 'PUT', // Define o método como PUT
+                                    headers: {
+                                        'Authorization': `Basic ${credentials}`,
+                                        'Content-Type': 'application/json'
+                                    }
+                                });
+                
+                                if (!responseImprimir.ok) {
+                                    // Lidar com o erro da requisição PUT, por exemplo:
+                                    const message = await responseImprimir.text();
+                                    alert(`Erro ao imprimir treino: ${message}`); 
+                                } else {
+                                    // Se a requisição PUT for bem-sucedida, exibir a resposta
+                                    const data = await responseImprimir.json();
+                                    displayData('Imprimir Treino', data);
+                                }
                             } catch (error) {
                                 console.error('Erro ao obter dados do aluno:', error);
                                 alert('Não foi possível carregar os dados.');

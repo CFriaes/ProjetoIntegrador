@@ -91,7 +91,7 @@ label {
     justify-content: baseline;
 }
 
-#aluno,#senha {
+#user,#senha {
     width: 250px;
     height: 50px;
     font-family: "Titillium Web", sans-serif;
