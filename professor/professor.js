@@ -43,12 +43,73 @@ document.getElementById('enviarFichaTreino').addEventListener('click', async () 
             },
             body: JSON.stringify(treinos)
         });
+
+        if (response.ok) {
+            alert('Ficha de treino criada com sucesso!');
+        } else {
+            const error = await response.text();
+            alert(`Erro ao criar ficha de treino: ${error}`);
+        }
+    } catch (err) {
+        console.error('Erro ao enviar ficha de treino:', err);
+        alert('Erro ao enviar os dados. Verifique a conexão.');
+    }
+});
+
+// Método para APAGAR uma ficha de treino
+async function apagarFichaTreino() {
+    const matricula = document.getElementById('matricula').value;
+
+    if (!matricula) {
+        alert('Digite a matrícula do aluno para apagar a ficha.');
+        return;
+    }
+
+    if (confirm('Tem certeza que deseja apagar a ficha de treino? Esta ação não pode ser desfeita.')) {
+        try {
+            const response = await fetch(`http://localhost:8080/instrutor/apagarFichaTreino/${matricula}`, {
+                method: 'DELETE', // Método HTTP para apagar dados
+                headers: {
+                    'Authorization': `Basic ${credentials}` // Autenticação
+                }
+            });
+
+            if (response.ok) {
+                alert('Ficha de treino apagada com sucesso!');
+                clearForm(); // Limpa o formulário após apagar
+            } else {
+                const error = await response.text();
+                alert(`Erro ao apagar ficha: ${error}`);
+            }
+        } catch (err) {
+            console.error('Erro ao apagar ficha:', err);
+            alert('Erro ao tentar apagar a ficha. Verifique a conexão.');
+        }
+    }
+}
+
+// Função auxiliar para limpar o formulário
+function clearForm() {
+    document.getElementById('matricula').value = '';
+    document.querySelectorAll('.exercicio').forEach(input => input.value = '');
+}
+
+// Adicionando botões para apagar no formulário
+const formContainer = document.getElementById('ficha-treino-form');
+const deleteButton = document.createElement('button');
+deleteButton.textContent = 'Apagar Ficha';
+deleteButton.id = 'apagarFicha';
+deleteButton.addEventListener('click', apagarFichaTreino);
+
+// Adiciona o botão de apagar ao formulário
+formContainer.appendChild(deleteButton);
+
 document.addEventListener('DOMContentLoaded', () => {
     const alunosContainer = document.querySelector('.alunos-container');
-    const credentials = localStorage.getItem('userCredentials'); 
+    const credentials = localStorage.getItem('userCredentials');
     let cpf = null;
 
-    const conteudoAlunos = document.querySelector('.conteudo-alunos'); 
+    const conteudoAlunos = document.querySelector('.conteudo-alunos');
 
     async function obterCpfInstrutor() {
         try {
@@ -65,13 +126,13 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             const data = await response.json();
-            return data.cpf; 
+            return data.cpf;
 
         } catch (error) {
             console.error('Erro ao obter o CPF do instrutor:', error);
         }
     }
-    
+
 
     // Função para exibir os dados na tela (adaptada)
     function displayData(title, data) {
@@ -149,7 +210,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (!response.ok) {
                 const message = await response.text();
-                throw new Error(`Erro ao buscar ficha de treino: ${message}`); 
+                throw new Error(`Erro ao buscar ficha de treino: ${message}`);
             }
 
             const data = await response.json();
@@ -157,7 +218,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         } catch (error) {
             console.error('Erro ao buscar ficha de treino do aluno:', error);
-            conteudoAlunos.innerHTML = `<p>Erro ao carregar os dados: ${error.message}</p>`; 
+            conteudoAlunos.innerHTML = `<p>Erro ao carregar os dados: ${error.message}</p>`;
         }
     }
 
@@ -172,37 +233,31 @@ document.addEventListener('DOMContentLoaded', () => {
                         'Content-Type': 'application/json'
                     }
                 });
-                
+
                 if (!response.ok) {
-                    const message = await response.text(); 
+                    const message = await response.text();
                     if (response.status === 404) {
-                        if (message.includes("Ficha de treino não encontrada")) {  
-                            conteudoAlunos.innerHTML = `<p>${message}</p>`; 
+                        if (message.includes("Ficha de treino não encontrada")) {
+                            conteudoAlunos.innerHTML = `<p>${message}</p>`;
                         } else {
                             conteudoAlunos.innerHTML = `<p>Nenhum aluno encontrado com a matrícula ${matricula}.</p>`;
                         }
                     } else {
-                        conteudoAlunos.innerHTML = `<p>${message}</p>`; 
+                        conteudoAlunos.innerHTML = `<p>${message}</p>`;
                     }
                 } else {
                     const aluno = await response.json();
                     const alunoCard = `
-    <div class="aluno-card">
-        <h3>${aluno.nome}</h3>
-        <p>Matrícula: ${aluno.matricula}</p>
-        <p>CPF: ${aluno.cpf}</p>
-    </div>
-`;
-conteudoAlunos.innerHTML = alunoCard;
+                        <div class="aluno-card">
+                            <h3>${aluno.nome}</h3>
+                            <p>Matrícula: ${aluno.matricula}</p>
+                            <p>CPF: ${aluno.cpf}</p>
+                        </div>
+                    `;
+                    conteudoAlunos.innerHTML = alunoCard;
 
-// Chama a ficha de treino diretamente
-buscarFichaTreinoAluno(aluno.matricula);
-                    botoesVerTreino.forEach(botao => {
-                        botao.addEventListener('click', () => {
-                            const matricula = botao.getAttribute('data-matricula');
-                            buscarFichaTreinoAluno(matricula);
-                        });
-                    });
+                    // Chama a ficha de treino diretamente
+                    buscarFichaTreinoAluno(aluno.matricula);
                 }
             } else {
                 conteudoAlunos.innerHTML = "<p>Nenhuma matrícula informada.</p>";
@@ -217,8 +272,8 @@ buscarFichaTreinoAluno(aluno.matricula);
 
     async function buscarInstrutor() {
         try {
-            if (cpf === null) { 
-                cpf = await obterCpfInstrutor(); 
+            if (cpf === null) {
+                cpf = await obterCpfInstrutor();
             }
             const response = await fetch(`http://localhost:8080/instrutor/recepcionista/cpf/${cpf}`, {
                 headers: {
@@ -233,12 +288,12 @@ buscarFichaTreinoAluno(aluno.matricula);
 
             const instrutor = await response.json();
             const instrutorInfo = `
-                <h2>Meus Dados</h2>
-                <p>Nome: ${instrutor.nome}</p>
-                <p>CPF: ${instrutor.cpf}</p>
-                <p>Email: ${instrutor.email}</p>
-                <p>Telefone: ${instrutor.telefone}</p>
-            `;
+                    <h2>Meus Dados</h2>
+                    <p>Nome: ${instrutor.nome}</p>
+                    <p>CPF: ${instrutor.cpf}</p>
+                    <p>Email: ${instrutor.email}</p>
+                    <p>Telefone: ${instrutor.telefone}</p>
+                `;
             conteudoAlunos.innerHTML = instrutorInfo;
 
         } catch (error) {
@@ -258,32 +313,16 @@ buscarFichaTreinoAluno(aluno.matricula);
                 body: JSON.stringify(dadosFicha)
             });
 
-        if (response.ok) {
+            if (!response.ok) {
+                const message = await response.text();
+                throw new Error(`Erro ao criar ficha de treino: ${message}`);
+            }
+
             alert('Ficha de treino criada com sucesso!');
-        } else {
-            const error = await response.text();
-            alert(`Erro ao criar ficha de treino: ${error}`);
-        }
-    } catch (err) {
-        console.error('Erro ao enviar ficha de treino:', err);
-        alert('Erro ao enviar os dados. Verifique a conexão.');
-    }
-});
-
-// Método para APAGAR uma ficha de treino
-async function apagarFichaTreino() {
-    const matricula = document.getElementById('matricula').value;
-
-    if (!matricula) {
-        alert('Digite a matrícula do aluno para apagar a ficha.');
-        return;
-    }
-
-    if (confirm('Tem certeza que deseja apagar a ficha de treino? Esta ação não pode ser desfeita.')) {
 
         } catch (error) {
             console.error('Erro ao criar ficha de treino:', error);
-            alert(error.message); 
+            alert(error.message);
         }
     }
 
@@ -314,44 +353,28 @@ async function apagarFichaTreino() {
 
     async function deletarFichaTreino(matricula) {
         try {
-            const response = await fetch(`http://localhost:8080/instrutor/apagarFichaTreino/${matricula}`, {
-                method: 'DELETE', // Método HTTP para apagar dados
+            const response = await fetch(`http://localhost:8080/fichas/instrutor/${matricula}`, {
+                method: 'DELETE',
                 headers: {
-                    'Authorization': `Basic ${credentials}` // Autenticação
+                    'Authorization': `Basic ${credentials}`,
+                    'Content-Type': 'application/json'
                 }
             });
 
-            if (response.ok) {
-                alert('Ficha de treino apagada com sucesso!');
-                clearForm(); // Limpa o formulário após apagar
-            } else {
-                const error = await response.text();
-                alert(`Erro ao apagar ficha: ${error}`);
+            if (!response.ok) {
+                throw new Error('Erro ao deletar ficha de treino.');
             }
-        } catch (err) {
-            console.error('Erro ao apagar ficha:', err);
-            alert('Erro ao tentar apagar a ficha. Verifique a conexão.');
+
+            alert('Ficha de treino deletada com sucesso!');
+
+        } catch (error) {
+            console.error('Erro ao deletar ficha de treino:', error);
+            alert('Erro ao deletar ficha de treino.');
         }
     }
-}
 
-// Função auxiliar para limpar o formulário
-function clearForm() {
-    document.getElementById('matricula').value = '';
-    document.querySelectorAll('.exercicio').forEach(input => input.value = '');
-}
-
-// Adicionando botões para apagar no formulário
-const formContainer = document.getElementById('ficha-treino-form');
-const deleteButton = document.createElement('button');
-deleteButton.textContent = 'Apagar Ficha';
-deleteButton.id = 'apagarFicha';
-deleteButton.addEventListener('click', apagarFichaTreino);
-
-// Adiciona o botão de apagar ao formulário
-formContainer.appendChild(deleteButton);
-
-    buscarInstrutor();
+    // Chama a função buscarInstrutor ao carregar a página
+    buscarInstrutor(); 
 
     const menuItemAlunos = document.querySelector('.item-menu[data-endpoint="buscarAlunos"]');
     menuItemAlunos.addEventListener('click', () => {
@@ -363,11 +386,11 @@ formContainer.appendChild(deleteButton);
     const botaoMeusDados = document.querySelector('.item-menu[data-endpoint="buscarInstrutor"]');
     if (botaoMeusDados) {
         botaoMeusDados.addEventListener('click', () => {
-            conteudoAlunos.innerHTML = ''; 
-            buscarInstrutor(); 
+            conteudoAlunos.innerHTML = '';
+            buscarInstrutor();
         });
     }
-    
+
 
     const menuItemCriarFicha = document.querySelector('.item-menu[data-endpoint="criarFichaTreino"]');
     menuItemCriarFicha.addEventListener('click', () => {
@@ -375,6 +398,11 @@ formContainer.appendChild(deleteButton);
         if (matricula) {
             // Implementar a lógica para criar a ficha de treino
             // ... (chamar a função criarFichaTreino com a matrícula e os dados da ficha) ...
+            // Exemplo:
+            const dadosFicha = {
+                // ... dados da ficha de treino ...
+            };
+            criarFichaTreino(matricula, dadosFicha); 
         } else {
             conteudoAlunos.innerHTML = "<p>Nenhuma matrícula informada.</p>";
         }
