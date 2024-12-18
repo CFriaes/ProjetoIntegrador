@@ -30,15 +30,6 @@ html, body {
     display: inline-flex;
 }
 
-.titulo::after{
-    position: absolute;
-    background-color: white;
-    content: " ";
-    width: 285px;
-    height: 2px;
-    top: 100px;
-}
-
 .wsquare {
     display: flex;
     align-items: center;
