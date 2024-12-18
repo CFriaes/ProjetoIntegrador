@@ -16,16 +16,56 @@ function displayData(title, data) {
     contentArea.appendChild(titleElement);
 
     if (Array.isArray(data)) {
-        // ... (código para array) ...
-    } else if (typeof data === 'object') { // Verifica se é um objeto
         const dataList = document.createElement('ul');
-        Object.entries(data).forEach(([key, value]) => {
+        data.forEach((item, index) => { // Itera sobre o array
             const listItem = document.createElement('li');
-            listItem.textContent = `${key}: ${value}`;
+            
+            if (typeof item === 'object') { // Verifica se o item do array é um objeto
+                listItem.textContent = `Item ${index + 1}:`; // Adiciona um título para o item do array
+                const nestedList = document.createElement('ul'); // Cria uma lista aninhada
+                Object.entries(item).forEach(([key, value]) => {
+                    const nestedListItem = document.createElement('li');
+                    nestedListItem.textContent = `${key}: ${value}`;
+                    nestedList.appendChild(nestedListItem);
+                });
+                listItem.appendChild(nestedList); // Adiciona a lista aninhada ao item principal
+            } else {
+                listItem.textContent = item; 
+            }
+
             dataList.appendChild(listItem);
         });
         contentArea.appendChild(dataList);
-    } else { // Caso seja uma string (mensagem de erro)
+    } else if (typeof data === 'object') {
+        const dataList = document.createElement('ul');
+        Object.entries(data).forEach(([key, value]) => {
+            const listItem = document.createElement('li');
+
+            // Verifica se o valor é um array e se contém objetos
+            if (Array.isArray(value) && value.every(item => typeof item === 'object')) { 
+                listItem.textContent = `${key}:`;
+                const nestedList = document.createElement('ul');
+                value.forEach((item, index) => { // Itera sobre o array de objetos
+                    const nestedListItem = document.createElement('li');
+                    nestedListItem.textContent = `Item ${index + 1}:`;
+                    const innerList = document.createElement('ul');
+                    Object.entries(item).forEach(([innerKey, innerValue]) => {
+                        const innerListItem = document.createElement('li');
+                        innerListItem.textContent = `${innerKey}: ${innerValue}`;
+                        innerList.appendChild(innerListItem);
+                    });
+                    nestedListItem.appendChild(innerList);
+                    nestedList.appendChild(nestedListItem);
+                });
+                listItem.appendChild(nestedList);
+            } else {
+                listItem.textContent = `${key}: ${value}`;
+            }
+
+            dataList.appendChild(listItem);
+        });
+        contentArea.appendChild(dataList);
+    } else {
         const messageElement = document.createElement('p');
         messageElement.textContent = data;
         contentArea.appendChild(messageElement);

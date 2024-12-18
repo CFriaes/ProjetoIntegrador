@@ -1,12 +1,10 @@
 document.addEventListener('DOMContentLoaded', () => {
     const alunosContainer = document.querySelector('.alunos-container');
-    const credentials = localStorage.getItem('userCredentials'); // Obtém as credenciais de login
+    const credentials = localStorage.getItem('userCredentials'); 
     let cpf = null;
 
-    // Mova esta linha para dentro do DOMContentLoaded:
-    const conteudoAlunos = document.querySelector('.conteudo-alunos'); // Seleciona a nova div
+    const conteudoAlunos = document.querySelector('.conteudo-alunos'); 
 
-    // Função para obter o CPF do instrutor logado
     async function obterCpfInstrutor() {
         try {
             const response = await fetch('http://localhost:8080/api/current-user', {
@@ -22,56 +20,106 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             const data = await response.json();
-            return data.cpf; // Retorna o CPF do instrutor
+            return data.cpf; 
 
         } catch (error) {
             console.error('Erro ao obter o CPF do instrutor:', error);
-            // Trate o erro, exiba uma mensagem na tela, etc.
         }
     }
     
-    // Função para buscar dados da API e exibir na tela
-    async function fetchData(url, title, options = {}) {
+
+    // Função para exibir os dados na tela (adaptada)
+    function displayData(title, data) {
+        conteudoAlunos.innerHTML = ''; // Limpa a área de conteúdo
+
+        const titleElement = document.createElement('h2');
+        titleElement.textContent = title;
+        conteudoAlunos.appendChild(titleElement);
+
+        if (Array.isArray(data)) {
+            const dataList = document.createElement('ul');
+            data.forEach((item, index) => {
+                const listItem = document.createElement('li');
+
+                if (typeof item === 'object') {
+                    listItem.textContent = `Item ${index + 1}:`;
+                    const nestedList = document.createElement('ul');
+                    Object.entries(item).forEach(([key, value]) => {
+                        const nestedListItem = document.createElement('li');
+                        nestedListItem.textContent = `${key}: ${value}`;
+                        nestedList.appendChild(nestedListItem);
+                    });
+                    listItem.appendChild(nestedList);
+                } else {
+                    listItem.textContent = item;
+                }
+
+                dataList.appendChild(listItem);
+            });
+            conteudoAlunos.appendChild(dataList);
+
+        } else if (typeof data === 'object') {
+            const dataList = document.createElement('ul');
+            Object.entries(data).forEach(([key, value]) => {
+                const listItem = document.createElement('li');
+
+                if (Array.isArray(value) && value.every(item => typeof item === 'object')) {
+                    listItem.textContent = `${key}:`;
+                    const nestedList = document.createElement('ul');
+                    value.forEach((item, index) => {
+                        const nestedListItem = document.createElement('li');
+                        nestedListItem.textContent = `Item ${index + 1}:`;
+                        const innerList = document.createElement('ul');
+                        Object.entries(item).forEach(([innerKey, innerValue]) => {
+                            const innerListItem = document.createElement('li');
+                            innerListItem.textContent = `${innerKey}: ${innerValue}`;
+                            innerList.appendChild(innerListItem);
+                        });
+                        nestedListItem.appendChild(innerList);
+                        nestedList.appendChild(nestedListItem);
+                    });
+                    listItem.appendChild(nestedList);
+                } else {
+                    listItem.textContent = `${key}: ${value}`;
+                }
+
+                dataList.appendChild(listItem);
+            });
+            conteudoAlunos.appendChild(dataList);
+        } else {
+            const messageElement = document.createElement('p');
+            messageElement.textContent = data;
+            conteudoAlunos.appendChild(messageElement);
+        }
+    }
+
+    async function buscarFichaTreinoAluno(matricula) {
         try {
-            const response = await fetch(url, {
+            const response = await fetch(`http://localhost:8080/fichas/instrutor/exercicios/${matricula}`, {
                 headers: {
                     'Authorization': `Basic ${credentials}`,
                     'Content-Type': 'application/json'
-                },
-                ...options
+                }
             });
 
             if (!response.ok) {
                 const message = await response.text();
-                throw new Error(`Erro ao buscar dados da API: ${message}`);
+                throw new Error(`Erro ao buscar ficha de treino: ${message}`); 
             }
 
             const data = await response.json();
-
-            let contentHTML = `<h2>${title}</h2>`;
-            if (Array.isArray(data)) {
-                contentHTML += '<ul>';
-                data.forEach(item => {
-                    contentHTML += `<li>${JSON.stringify(item)}</li>`;
-                });
-                contentHTML += '</ul>';
-            } else {
-                contentHTML += `<p>${JSON.stringify(data)}</p>`;
-            }
-
-            conteudoAlunos.innerHTML = contentHTML; // Define o conteúdo na div correta
+            displayData('Ficha de Treino do Aluno', data); // Chama a função displayData para exibir a ficha de treino
 
         } catch (error) {
-            console.error(error);
-            conteudoAlunos.innerHTML = `<p>Erro ao carregar os dados: ${error.message}</p>`;
+            console.error('Erro ao buscar ficha de treino do aluno:', error);
+            conteudoAlunos.innerHTML = `<p>Erro ao carregar os dados: ${error.message}</p>`; 
         }
     }
 
-    // Metodo responsável por buscar alunos
+
     async function buscarAlunos() {
         try {
             const matricula = prompt("Digite o número de matrícula do aluno:");
-        
             if (matricula) {
                 const response = await fetch(`http://localhost:8080/fichas/instrutor/exercicios/${matricula}`, {
                     headers: {
@@ -79,39 +127,34 @@ document.addEventListener('DOMContentLoaded', () => {
                         'Content-Type': 'application/json'
                     }
                 });
-            
+                
                 if (!response.ok) {
-                    // Captura a mensagem de erro do backend
                     const message = await response.text(); 
-            
                     if (response.status === 404) {
-                        // Verifica se a mensagem de erro é sobre a ficha de treino
-                        if (message.includes("Ficha de treino não encontrada")) {  
-                            conteudoAlunos.innerHTML = `<p>${message}</p>`; // Exibe a mensagem do backend
+                        if (message.includes("Ficha de treino não encontrada")) {  
+                            conteudoAlunos.innerHTML = `<p>${message}</p>`; 
                         } else {
                             conteudoAlunos.innerHTML = `<p>Nenhum aluno encontrado com a matrícula ${matricula}.</p>`;
                         }
                     } else {
-                        // Exibe a mensagem de erro do backend na tela
                         conteudoAlunos.innerHTML = `<p>${message}</p>`; 
                     }
                 } else {
                     const aluno = await response.json();
                     const alunoCard = `
-                        <div class="aluno-card">
-                            <h3>${aluno.nome}</h3>
-                            <p>Matrícula: ${aluno.matricula}</p>
-                            <p>CPF: ${aluno.cpf}</p>
-                            <button class="btn-ver-treino" data-matricula="${aluno.matricula}">Ver Treino</button>
-                        </div>
-                    `;
-                    conteudoAlunos.innerHTML = alunoCard;
+    <div class="aluno-card">
+        <h3>${aluno.nome}</h3>
+        <p>Matrícula: ${aluno.matricula}</p>
+        <p>CPF: ${aluno.cpf}</p>
+    </div>
+`;
+conteudoAlunos.innerHTML = alunoCard;
 
-                    const botoesVerTreino = document.querySelectorAll('.btn-ver-treino');
+// Chama a ficha de treino diretamente
+buscarFichaTreinoAluno(aluno.matricula);
                     botoesVerTreino.forEach(botao => {
                         botao.addEventListener('click', () => {
                             const matricula = botao.getAttribute('data-matricula');
-                            // Chama a função para buscar a ficha de treino do aluno
                             buscarFichaTreinoAluno(matricula);
                         });
                     });
@@ -126,11 +169,11 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Buscar dados do instrutor logado
+
     async function buscarInstrutor() {
         try {
-            if (cpf === null) { // Verifica se o CPF já foi obtido
-                cpf = await obterCpfInstrutor(); // Obtém o CPF do instrutor
+            if (cpf === null) { 
+                cpf = await obterCpfInstrutor(); 
             }
             const response = await fetch(`http://localhost:8080/instrutor/recepcionista/cpf/${cpf}`, {
                 headers: {
@@ -159,59 +202,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-
-    // Cadastrar senha para instrutor (Exemplo) - Este endpoint é acessado pelo Recepcionista
-    async function cadastrarSenhaInstrutor(cpf, senha) {
-        try {
-            const response = await fetch('http://localhost:8080/instrutor/recepcionista/usuariocadastro', {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Basic ${credentials}`,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ cpf, senha }) // Ajustar o body conforme a necessidade
-            });
-
-            if (!response.ok) {
-                throw new Error('Erro ao cadastrar senha para o instrutor.');
-            }
-
-            // Exibir mensagem de sucesso (adapte para a sua necessidade)
-            alert('Senha do instrutor cadastrada com sucesso!');
-
-        } catch (error) {
-            console.error('Erro ao cadastrar senha para o instrutor:', error);
-            alert('Erro ao cadastrar senha para o instrutor.');
-        }
-    }
-
-    // Atualizar dados do instrutor (Exemplo) - Este endpoint é acessado pelo Recepcionista
-    async function atualizarInstrutor(cpf, dadosAtualizados) {
-        try {
-            const response = await fetch(`http://localhost:8080/instrutor/recepcionista/atualizar/cpf/${cpf}`, {
-                method: 'PUT',
-                headers: {
-                    'Authorization': `Basic ${credentials}`,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(dadosAtualizados)
-            });
-
-            if (!response.ok) {
-                throw new Error('Erro ao atualizar dados do instrutor.');
-            }
-
-            // Exibir mensagem de sucesso (adapte para a sua necessidade)
-            alert('Dados do instrutor atualizados com sucesso!');
-
-        } catch (error) {
-            console.error('Erro ao atualizar instrutor:', error);
-            alert('Erro ao atualizar dados do instrutor.');
-        }
-    }
-
-
-    // Criar nova ficha de treino para um aluno (Exemplo)
     async function criarFichaTreino(matricula, dadosFicha) {
         try {
             const response = await fetch(`http://localhost:8080/fichas/instrutor/criar`, {
@@ -236,7 +226,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Atualizar ficha de treino de um aluno (Exemplo)
+
     async function atualizarFichaTreino(matricula, dadosFicha) {
         try {
             const response = await fetch(`http://localhost:8080/fichas/instrutor/atualizar/${matricula}`, {
@@ -260,7 +250,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Deletar ficha de treino de um aluno (Exemplo)
+
     async function deletarFichaTreino(matricula) {
         try {
             const response = await fetch(`http://localhost:8080/fichas/instrutor/${matricula}`, {
@@ -283,34 +273,32 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-     // Chamar a função buscarInstrutor ao carregar a página
-     buscarInstrutor();
+    buscarInstrutor();
 
-     // Adicionar evento de clique ao item do menu "Alunos"
-     const menuItemAlunos = document.querySelector('.item-menu[data-endpoint="buscarAlunos"]');
-     menuItemAlunos.addEventListener('click', () => {
-         conteudoAlunos.innerHTML = '';
-         buscarAlunos();
-     });
-
-     // Adicionar evento de clique ao botão "Meus Dados"
-     const botaoMeusDados = document.querySelector('.item-menu[data-endpoint="buscarInstrutor"]');
-if (botaoMeusDados) {
-    botaoMeusDados.addEventListener('click', () => {
-        conteudoAlunos.innerHTML = ''; // Limpa o conteúdo atual
-        buscarInstrutor(); // Chama a função para buscar os dados do instrutor
+    const menuItemAlunos = document.querySelector('.item-menu[data-endpoint="buscarAlunos"]');
+    menuItemAlunos.addEventListener('click', () => {
+        conteudoAlunos.innerHTML = '';
+        buscarAlunos();
     });
-}
- 
-     // Adicionar evento de clique ao item do menu "Criar Ficha de Treino"
-     const menuItemCriarFicha = document.querySelector('.item-menu[data-endpoint="criarFichaTreino"]');
-     menuItemCriarFicha.addEventListener('click', () => {
-         const matricula = prompt("Digite a matrícula do aluno para criar a ficha de treino:");
-         if (matricula) {
-             // Implementar a lógica para criar a ficha de treino
-             // ... (chamar a função criarFichaTreino com a matrícula e os dados da ficha) ...
-         } else {
-             conteudoAlunos.innerHTML = "<p>Nenhuma matrícula informada.</p>";
-         }
-     });
- });
+
+
+    const botaoMeusDados = document.querySelector('.item-menu[data-endpoint="buscarInstrutor"]');
+    if (botaoMeusDados) {
+        botaoMeusDados.addEventListener('click', () => {
+            conteudoAlunos.innerHTML = ''; 
+            buscarInstrutor(); 
+        });
+    }
+    
+
+    const menuItemCriarFicha = document.querySelector('.item-menu[data-endpoint="criarFichaTreino"]');
+    menuItemCriarFicha.addEventListener('click', () => {
+        const matricula = prompt("Digite a matrícula do aluno para criar a ficha de treino:");
+        if (matricula) {
+            // Implementar a lógica para criar a ficha de treino
+            // ... (chamar a função criarFichaTreino com a matrícula e os dados da ficha) ...
+        } else {
+            conteudoAlunos.innerHTML = "<p>Nenhuma matrícula informada.</p>";
+        }
+    });
+});
